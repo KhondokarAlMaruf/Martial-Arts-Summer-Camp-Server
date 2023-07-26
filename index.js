@@ -26,6 +26,8 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
+  const usersCollection = client.db("summer-camp").collection("users");
+
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
@@ -34,6 +36,13 @@ async function run() {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+    // user add to db
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      console.log(result);
+      res.send(result);
+    });
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
