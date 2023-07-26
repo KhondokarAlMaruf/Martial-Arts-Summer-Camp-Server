@@ -74,6 +74,14 @@ async function run() {
 
     app.post("/users", async (req, res) => {
       const user = req.body;
+
+      const query = { email: user.email };
+      const existingUser = await usersCollection.findOne(query);
+
+      if (existingUser) {
+        return res.send({ message: "user already exists" });
+      }
+
       const result = await usersCollection.insertOne(user);
       console.log(result);
       res.send(result);
@@ -87,6 +95,25 @@ async function run() {
       const user = await usersCollection.findOne(query);
       res.send({ isAdmin: user?.role === "admin" });
     });
+
+    app.get("/instructor", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        email: email,
+      };
+      const user = await usersCollection.findOne(query);
+      res.send({ isInstructor: user?.role === "instructor" });
+    });
+
+    app.get("/student", verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        email: email,
+      };
+      const user = await usersCollection.findOne(query);
+      res.send({ isStudent: user?.role === "student" });
+    });
+
     app.put("/users/role/:userId", verifyJWT, async (req, res) => {
       try {
         const { userId } = req.params;
