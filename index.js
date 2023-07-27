@@ -114,6 +114,22 @@ async function run() {
       res.send({ isStudent: user?.role === "student" });
     });
 
+    // instructor
+    app.get("/users/role", verifyJWT, async (req, res) => {
+      const { role } = req.query;
+
+      // If the role query parameter is provided, filter users by role
+      const query = role ? { role } : {};
+
+      try {
+        const result = await usersCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
     app.put("/users/role/:userId", verifyJWT, async (req, res) => {
       try {
         const { userId } = req.params;
