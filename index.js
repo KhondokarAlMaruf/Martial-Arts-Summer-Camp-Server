@@ -47,6 +47,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   const usersCollection = client.db("summer-camp").collection("users");
+  const classesCollection = client.db("summer-camp").collection("classes");
 
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -66,6 +67,19 @@ async function run() {
       res.send({ accessToken: token });
     });
 
+    // classes add to db
+    app.get("/classes", verifyJWT, async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/classes", async (req, res) => {
+      const classes = req.body;
+
+      const result = await classesCollection.insertOne(classes);
+      console.log(result);
+      res.send(result);
+    });
     // user add to db
     app.get("/users", verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
