@@ -80,6 +80,26 @@ async function run() {
       console.log(result);
       res.send(result);
     });
+
+    app.get("/classes/:id", async (req, res) => {
+      const classId = req.params.id;
+
+      try {
+        const classDetails = await classesCollection.findOne({
+          _id: new ObjectId(classId),
+        });
+
+        if (!classDetails) {
+          return res.status(404).json({ error: "Class not found" });
+        }
+
+        res.json(classDetails);
+      } catch (error) {
+        console.error("Error retrieving class details:", error);
+        res.status(500).json({ error: "Failed to retrieve class details" });
+      }
+    });
+
     // user add to db
     app.get("/users", verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
@@ -176,6 +196,47 @@ async function run() {
         res.json({ message: "User role updated successfully" });
       } catch (error) {
         console.error("Error updating user role:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+    //status
+    app.put("/status/:userId", verifyJWT, async (req, res) => {
+      try {
+        const { userId } = req.params;
+        const { status } = req.body;
+        const query = { _id: new ObjectId(userId) };
+        const update = { $set: { status } };
+        const result = await classesCollection.updateOne(query, update);
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .json({ message: "status found or no changes made" });
+        }
+        res.json({ message: "status updated successfully" });
+      } catch (error) {
+        console.error("Error updating status:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+    app.put("/send-feedback/:classId", verifyJWT, async (req, res) => {
+      try {
+        const { classId } = req.params;
+        const { feedback } = req.body;
+        const query = { _id: new ObjectId(classId) };
+
+        const update = { $push: { feedback: feedback } }; // Use $push to add the feedback to the existing array
+
+        const result = await classesCollection.updateOne(query, update);
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .json({ message: "Class not found or no changes made" });
+        }
+        res.json({ message: "Feedback sent successfully" });
+      } catch (error) {
+        console.error("Error sending feedback:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     });
