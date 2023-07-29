@@ -68,7 +68,7 @@ async function run() {
     });
 
     // classes add to db
-    app.get("/classes", verifyJWT, async (req, res) => {
+    app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
@@ -97,6 +97,58 @@ async function run() {
       } catch (error) {
         console.error("Error retrieving class details:", error);
         res.status(500).json({ error: "Failed to retrieve class details" });
+      }
+    });
+
+    // app.get("/classes/email", async (req, res) => {
+    //   const email = req.query.email;
+    //   console.log(email);
+    //   const query = {
+    //     instructorEmail: email,
+    //   };
+    //   console.log(query);
+    //   const result = await classesCollection.find(query).toArray();
+    //   res.send(result);
+    // });
+
+    app.get("/single-class", async (req, res) => {
+      try {
+        const { email } = req.query;
+        console.log(email);
+
+        // Assuming you have a MongoDB collection named "classesCollection"
+        const query = {
+          instructorEmail: email,
+        };
+        console.log(query);
+
+        const result = await classesCollection.find(query).toArray();
+        res.json(result);
+      } catch (error) {
+        console.error("Error fetching classes by email:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+    app.put("/classes/:classId", verifyJWT, async (req, res) => {
+      try {
+        const { classId } = req.params;
+        const { feedback } = req.body;
+
+        const query = { _id: new ObjectId(classId) };
+        const update = { $push: { feedback: feedback } };
+
+        const result = await classesCollection.updateOne(query, update);
+        if (result.modifiedCount === 0) {
+          return res
+            .status(404)
+            .json({ message: "feedback not found or no changes made" });
+        }
+
+        res.json({ message: "feedback updated successfully" });
+      } catch (error) {
+        console.error("Error updating feedback:", error);
+        res.status(500).json({ error: "Internal server error" });
       }
     });
 
@@ -216,27 +268,6 @@ async function run() {
         res.json({ message: "status updated successfully" });
       } catch (error) {
         console.error("Error updating status:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
-    });
-
-    app.put("/send-feedback/:classId", verifyJWT, async (req, res) => {
-      try {
-        const { classId } = req.params;
-        const { feedback } = req.body;
-        const query = { _id: new ObjectId(classId) };
-
-        const update = { $push: { feedback: feedback } }; // Use $push to add the feedback to the existing array
-
-        const result = await classesCollection.updateOne(query, update);
-        if (result.modifiedCount === 0) {
-          return res
-            .status(404)
-            .json({ message: "Class not found or no changes made" });
-        }
-        res.json({ message: "Feedback sent successfully" });
-      } catch (error) {
-        console.error("Error sending feedback:", error);
         res.status(500).json({ error: "Internal server error" });
       }
     });
