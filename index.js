@@ -48,6 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   const usersCollection = client.db("summer-camp").collection("users");
   const classesCollection = client.db("summer-camp").collection("classes");
+  const bookClassCollection = client.db("summer-camp").collection("book-class");
 
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -99,17 +100,6 @@ async function run() {
         res.status(500).json({ error: "Failed to retrieve class details" });
       }
     });
-
-    // app.get("/classes/email", async (req, res) => {
-    //   const email = req.query.email;
-    //   console.log(email);
-    //   const query = {
-    //     instructorEmail: email,
-    //   };
-    //   console.log(query);
-    //   const result = await classesCollection.find(query).toArray();
-    //   res.send(result);
-    // });
 
     app.get("/single-class", async (req, res) => {
       try {
@@ -201,7 +191,7 @@ async function run() {
     });
 
     // instructor
-    app.get("/users/role", verifyJWT, async (req, res) => {
+    app.get("/users/role", async (req, res) => {
       const { role } = req.query;
 
       // If the role query parameter is provided, filter users by role
@@ -270,6 +260,82 @@ async function run() {
         console.error("Error updating status:", error);
         res.status(500).json({ error: "Internal server error" });
       }
+    });
+
+    //book class from student
+    app.post("/book-class", async (req, res) => {
+      try {
+        const booking = req.body;
+
+        const existingBooking = await bookClassCollection.findOne({
+          studentEmail: booking.studentEmail,
+          classId: booking.classId,
+        });
+
+        if (existingBooking) {
+          return res
+            .status(400)
+            .json({ message: "You have already booked this class." });
+        }
+
+        const classResult = await classesCollection.updateOne(
+          { _id: new ObjectId(booking.classId) },
+          { $inc: { enrolledStudent: 1 } }
+        );
+
+        if (classResult.modifiedCount === 0) {
+          return res
+            .status(404)
+            .json({ message: "Class not found or no changes made." });
+        }
+
+        const bookingResult = await bookClassCollection.insertOne(booking);
+
+        const bookingUpdateResult = await bookClassCollection.updateOne(
+          { _id: bookingResult.insertedId },
+          { $inc: { enrolledStudent: 1 } }
+        );
+
+        if (bookingUpdateResult.modifiedCount === 0) {
+          return res
+            .status(500)
+            .json({ error: "Failed to update booking information." });
+        }
+
+        res.json({ message: "Class booked successfully", data: bookingResult });
+      } catch (error) {
+        console.error("Error booking class:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
+
+    app.get("/book-class", async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        studentEmail: email,
+      };
+      const result = await bookClassCollection.find(query).toArray();
+      res.send(result);
+    });
+    // delete class from student book class
+    app.delete("/delete-class/:id", async (req, res) => {
+      const deleteId = req.params.id;
+      const query = {
+        _id: new ObjectId(deleteId),
+      };
+      const result = await bookClassCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //top enroll
+    app.get("/top-enroll-class", async (req, res) => {
+      const query = {};
+      const result = await classesCollection
+        .find()
+        .sort({ enrolledStudent: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
     });
   } finally {
     // Ensures that the client will close when you finish/error
