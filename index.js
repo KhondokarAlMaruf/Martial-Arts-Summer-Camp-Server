@@ -106,7 +106,7 @@ async function run() {
         const { email } = req.query;
         console.log(email);
 
-        // Assuming you have a MongoDB collection named "classesCollection"
+        // MongoDB collection named "classesCollection"
         const query = {
           instructorEmail: email,
         };
@@ -191,19 +191,6 @@ async function run() {
     });
 
     // instructor
-    app.get("/users/role", async (req, res) => {
-      const { role } = req.query;
-
-      const query = role ? { role } : {};
-
-      try {
-        const result = await usersCollection.find(query).toArray();
-        res.send(result);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
-    });
     app.get("/users/role", async (req, res) => {
       const { role } = req.query;
 
