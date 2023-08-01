@@ -204,6 +204,19 @@ async function run() {
         res.status(500).json({ error: "Internal server error" });
       }
     });
+    app.get("/users/role", async (req, res) => {
+      const { role } = req.query;
+
+      const query = role ? { role } : {};
+
+      try {
+        const result = await usersCollection.find(query).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
+    });
 
     app.put("/users/role/:userId", verifyJWT, async (req, res) => {
       try {
