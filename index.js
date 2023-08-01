@@ -194,7 +194,6 @@ async function run() {
     app.get("/users/role", async (req, res) => {
       const { role } = req.query;
 
-      // If the role query parameter is provided, filter users by role
       const query = role ? { role } : {};
 
       try {
@@ -211,7 +210,7 @@ async function run() {
         const { userId } = req.params;
         const { role } = req.body;
 
-        // Make sure the role is valid (e.g., "admin" or "instructor")
+        // "admin" or "instructor")
         if (role !== "admin" && role !== "instructor") {
           return res.status(400).json({ message: "Invalid role value" });
         }
@@ -222,12 +221,7 @@ async function run() {
         const query = { _id: new ObjectId(userId) };
         const update = { $set: { role } };
 
-        // console.log("Update query:", query);
-        // console.log("Update data:", update);
-
         const result = await usersCollection.updateOne(query, update);
-
-        // console.log("Update result:", result);
 
         if (result.modifiedCount === 0) {
           return res
